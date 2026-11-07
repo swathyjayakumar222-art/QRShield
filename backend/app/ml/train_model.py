@@ -11,6 +11,7 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -119,8 +120,13 @@ def train(dataset_path: Path, model_path: Path, random_state: int = 42) -> dict:
             best_model = model
 
     model_path.parent.mkdir(parents=True, exist_ok=True)
+    # After holdout evaluation is complete, refit the selected model on all cleaned rows
+    # so the deployed artifact can use every labelled training example.
+    final_model = clone(candidates[best_name])
+    final_model.fit(feature_frame, y)
+
     bundle = {
-        "model": best_model,
+        "model": final_model,
         "model_name": best_name,
         "feature_columns": FEATURE_COLUMNS,
         "positive_class": 1,
