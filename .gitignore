@@ -15,3 +15,9 @@ dist/
 Thumbs.db
 uploads/
 data/private/
+
+# Local ML data and generated models
+backend/data/raw/*
+!backend/data/raw/.gitkeep
+backend/models/*.joblib
+backend/models/*.metrics.json
