@@ -1,4 +1,6 @@
 """QRShield API — first milestone."""
+
+from pydantic import BaseModel, Field, field_validator
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,7 +10,7 @@ from app.services.url_analyzer import analyze_url, classify_payload
 app = FastAPI(
     title="QRShield API",
     description="QR decoding and explainable baseline risk analysis. Destinations are never opened.",
-    version="0.1.0",
+    version="0.2.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -17,26 +19,46 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 
+class AnalyzeURLRequest(BaseModel):
+    url: str = Field(min_length=1, max_length=2048)
+
+    @field_validator("url")
+    @classmethod
+    def strip_and_validate_url(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("URL cannot be blank.")
+        return value
+
+
 @app.get("/api/health")
-def health():
-    return {"status": "ok", "service": "QRShield API", "version": "0.1.0"}
+def health() -> dict[str, str]:
+    return {"status": "ok", "service": "QRShield API", "version": "0.2.0"}
 
 
 @app.post("/api/scan")
-async def scan_qr(file: UploadFile = File(...)):
+async def scan_qr(file: UploadFile = File(...)) -> dict:
     if not file.content_type or not file.content_type.startswith("image/"):
+        await file.close()
         raise HTTPException(status_code=415, detail="Please upload an image file.")
-    content = await file.read(MAX_UPLOAD_BYTES + 1)
-    await file.close()
+
+    try:
+        content = await file.read(MAX_UPLOAD_BYTES + 1)
+    finally:
+        await file.close()
+
     if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="Image exceeds the 5 MB upload limit.")
+
     try:
         decoded = decode_qr_image(content)
     except QRDecodeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     results = []
     for item in decoded:
         payload = item["payload"]
@@ -50,10 +72,10 @@ async def scan_qr(file: UploadFile = File(...)):
 
 
 @app.post("/api/analyze-url")
-def analyze_url_endpoint(body: dict):
-    value = body.get("url") if isinstance(body, dict) else None
-    if not isinstance(value, str) or not value.strip():
-        raise HTTPException(status_code=400, detail="Provide a non-empty URL string.")
-    if len(value) > 2048:
-        raise HTTPException(status_code=400, detail="URL is too long (maximum 2048 characters).")
-    return {"payload_type": classify_payload(value), "risk_assessment": analyze_url(value)}
+def analyze_url_endpoint(body: AnalyzeURLRequest) -> dict:
+    if classify_payload(body.url) != "url":
+        raise HTTPException(status_code=422, detail="The supplied content is not recognised as an HTTP or HTTPS URL.")
+    return {
+        "payload_type": "url",
+        "risk_assessment": analyze_url(body.url),
+    }
