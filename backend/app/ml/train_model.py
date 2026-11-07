@@ -45,6 +45,7 @@ def train(dataset_path: Path, model_path: Path, random_state: int = 42) -> dict:
         )
 
     frame = frame[["URL", "ClassLabel"]].copy()
+    frame = frame.dropna(subset=["URL", "ClassLabel"])
     frame["URL"] = frame["URL"].astype(str).str.strip()
     frame["ClassLabel"] = pd.to_numeric(frame["ClassLabel"], errors="coerce")
     frame = frame.dropna(subset=["ClassLabel"])
