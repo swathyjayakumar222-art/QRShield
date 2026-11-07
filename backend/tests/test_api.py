@@ -34,3 +34,12 @@ def test_scan_rejects_non_image_upload():
         files={"file": ("note.txt", b"not an image", "text/plain")},
     )
     assert response.status_code == 415
+
+
+def test_ml_predictor_reports_missing_model_clearly(monkeypatch, tmp_path):
+    from app.ml.predict import predict_url
+
+    monkeypatch.setenv("QRSHIELD_MODEL_PATH", str(tmp_path / "not-trained.joblib"))
+    result = predict_url("https://example.com")
+    assert result["available"] is False
+    assert result["status"] == "not_trained"
