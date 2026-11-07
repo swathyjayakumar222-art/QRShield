@@ -84,3 +84,7 @@ The CSV should be stored locally at backend/data/raw/url_features_extracted1.csv
 ## Attribution
 
 The dataset is distributed under CC BY 4.0 according to its Mendeley Data record. Cite the dataset and article when using it in a report or presentation.
+
+## Small manual sanity check outside the holdout
+
+A few common, manually selected URLs were passed through the saved Random Forest model as a smoke check. The model did not consistently treat familiar legitimate services as low-risk: examples such as Stack Overflow, Amazon, example.com and a Microsoft sign-in URL received phishing-pattern scores above the 0.5 decision threshold. This was not a labelled benchmark and is not included in the metrics above, but it exposes an important generalisation weakness. The model should be used as a research signal only until it has been evaluated on a larger, independently labelled and time-separated set of legitimate and phishing URLs.
