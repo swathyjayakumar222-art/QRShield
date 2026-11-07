@@ -1,16 +1,17 @@
-"""QRShield API — first milestone."""
+"""QRShield API — QR decoding, heuristic analysis and optional ML inference."""
 
 from pydantic import BaseModel, Field, field_validator
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.ml.predict import predict_url
 from app.services.qr_decoder import QRDecodeError, decode_qr_image
 from app.services.url_analyzer import analyze_url, classify_payload
 
 app = FastAPI(
     title="QRShield API",
-    description="QR decoding and explainable baseline risk analysis. Destinations are never opened.",
-    version="0.2.0",
+    description="QR decoding and explainable URL analysis. Destinations are never opened.",
+    version="0.3.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -37,7 +38,7 @@ class AnalyzeURLRequest(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "QRShield API", "version": "0.2.0"}
+    return {"status": "ok", "service": "QRShield API", "version": "0.3.0"}
 
 
 @app.post("/api/scan")
@@ -67,6 +68,7 @@ async def scan_qr(file: UploadFile = File(...)) -> dict:
             "payload_type": kind,
             "payload": payload,
             "risk_assessment": analyze_url(payload) if kind == "url" else None,
+            "ml_assessment": predict_url(payload) if kind == "url" else None,
         })
     return {"count": len(results), "results": results}
 
@@ -78,4 +80,5 @@ def analyze_url_endpoint(body: AnalyzeURLRequest) -> dict:
     return {
         "payload_type": "url",
         "risk_assessment": analyze_url(body.url),
+        "ml_assessment": predict_url(body.url),
     }
