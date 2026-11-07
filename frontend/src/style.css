@@ -35,3 +35,8 @@ button span{float:right}
 .disclaimer{color:#899bb3;font-size:11px;line-height:1.6}
 footer{border-top:1px solid #263448;padding:22px 0 35px;display:flex;justify-content:space-between;gap:20px;color:#8292a9;font-size:11px}
 @media(max-width:600px){.shell{width:min(100% - 28px,1080px)}.hero{padding-top:54px}h1{letter-spacing:-2px}.upload{padding:22px}footer{flex-direction:column}}
+
+.ml-panel{margin-top:18px;padding:16px;border:1px solid #3c5270;border-radius:12px;background:#122035}
+.ml-panel h3{margin:0 0 10px;font:700 14px Manrope,sans-serif;color:#a9c9ff}
+.ml-panel p{color:#c5d2e3;font-size:13px;line-height:1.6}
+.ml-panel .ml-score{font-weight:700;color:#8fbcff}
