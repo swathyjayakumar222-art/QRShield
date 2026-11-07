@@ -96,6 +96,23 @@ python -m pytest -q
 
 The tests cover payload classification, common URL indicators, malformed input, the health endpoint, and API validation.
 
+## Train the URL-based ML baseline
+
+The ML training pipeline uses the LegitPhish Dataset, Version 2. Download instructions, label meanings, license details and attribution are documented in [backend/data/README.md](backend/data/README.md).
+
+1. Download Version 2 from https://data.mendeley.com/datasets/hx4m73v2sf/2.
+2. Extract `url_features_extracted1.csv` to `backend/data/raw/url_features_extracted1.csv`.
+3. From the `backend` folder, install the optional ML dependencies and train:
+
+```powershell
+pip install -r requirements-ml.txt
+python -m app.ml.train_model
+```
+
+The script derives the same 16 URL features used by QRShield, removes exact duplicate URLs, creates a five-fold stratified hostname-grouped holdout split, compares Logistic Regression and Random Forest, and writes the best model to `backend/models/qrshield_url_model.joblib` with a metrics report beside it. The dataset and generated model are not committed to Git.
+
+**Important:** This creates and evaluates a URL-phishing model. The trained model is not yet connected to the live scan result; that integration is the next development step after the dataset has been downloaded and training results have been reviewed.
+
 ## API endpoints
 
 | Method | Endpoint | Purpose |
