@@ -21,6 +21,8 @@ The URL-based ML baseline is designed for the **LegitPhish Dataset, Version 2**.
 
 The CSV and trained model files are intentionally excluded from Git. Keep the source dataset locally and cite it in reports.
 
+**Feature consistency:** although the supplied CSV includes precomputed feature columns, the QRShield trainer intentionally reads the raw URL and label columns and recomputes its own 16 numerical features through `app/ml/url_features.py`. That exact same extractor is used when a scanned QR code is analysed by the trained model. This prevents a mismatch between dataset-side feature calculations and live inference.
+
 ## Attribution
 
 Potpelwar, R., Kulkarni, U., & Waghmare, J. (2025). *LegitPhish Dataset* (Version 2). Mendeley Data. https://doi.org/10.17632/hx4m73v2sf.2
