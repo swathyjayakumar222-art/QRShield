@@ -111,6 +111,8 @@ python -m app.ml.train_model
 
 The script derives the same 16 URL features used by QRShield, removes exact duplicate URLs, creates a five-fold stratified hostname-grouped holdout split, compares Logistic Regression and Random Forest, and writes the best model to `backend/models/qrshield_url_model.joblib` with a metrics report beside it. The dataset and generated model are not committed to Git.
 
+See [docs/model-evaluation.md](docs/model-evaluation.md) for the actual uploaded-dataset cleaning summary, held-out metrics, confusion matrix and evaluation limitations.
+
 **Important:** The scan API checks for a saved model automatically. Before a model exists, it clearly reports that ML is not trained and continues to use the rule-based assessment. After training, restart the backend; the ML panel will show the model's phishing-pattern score. Install the ML dependencies in the same Python environment used to run the backend.
 
 ## API endpoints
