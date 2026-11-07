@@ -2,55 +2,133 @@
 
 **QRShield: An Explainable Multi-Layer Framework for Context-Aware QR Code Fraud Detection and Safe Destination Verification**
 
-QRShield is an academic research prototype that helps users inspect QR-code contents before visiting a destination. The first milestone decodes QR images, identifies payload types, extracts basic URL indicators, and presents an explainable heuristic assessment.
+QRShield is an academic research prototype that helps users inspect QR-code contents before visiting a destination. The first milestone accepts a QR image, decodes its content, identifies the payload type, and displays basic URL indicators with an explainable heuristic assessment.
 
-> **Important:** A low-risk result is not proof that a destination is safe. QRShield never automatically opens decoded URLs.
+> **Important:** A low-risk result is not proof that a destination is safe. QRShield does not automatically open or contact decoded URLs.
 
-## Planned layers
-1. QR image upload and decoding.
-2. Payload-type recognition (URL, text, email, telephone, Wi-Fi and other URI types).
-3. Explainable URL feature analysis.
-4. Later: controlled redirect inspection and reputation signals.
-5. Later: a trained phishing classifier and optional OCR-based context comparison.
+## Current features
 
-## Stack
-- Backend: Python, FastAPI
-- Frontend: React, Vite
-- QR decoding: OpenCV, pyzbar
-- Planned ML: scikit-learn after dataset selection and evaluation design
+- Upload a QR-code image from the React interface.
+- Validate the upload and enforce a 5 MB limit.
+- Decode QR content using OpenCV.
+- Identify URL, email, telephone, Wi-Fi, payment/crypto URI, other URI, and plain-text payloads.
+- Recognise both full URLs and bare domains such as `example.com`.
+- Analyse basic URL indicators locally: HTTP scheme, IP-literal host, known URL-shortening host, Punycode hostname, user-information fields, unusual URL length, and malformed URL/port formats.
+- Show the heuristic score, risk level, reasons, and a caution message.
+- Never follow redirects, perform DNS lookups, fetch webpages, or automatically open scanned destinations.
 
-## Run locally
+## Technology
 
-Backend (Python 3.10+):
-```bash
+- **Frontend:** React 19 + Vite
+- **Backend:** Python + FastAPI
+- **QR decoding:** OpenCV
+- **Image handling:** Pillow + NumPy
+- **Validation:** Pydantic
+- **Tests:** pytest + FastAPI TestClient
+
+## Project structure
+
+```
+QRShield/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   └── services/
+│   │       ├── qr_decoder.py
+│   │       └── url_analyzer.py
+│   ├── tests/
+│   │   ├── test_api.py
+│   │   └── test_url_analyzer.py
+│   ├── requirements.txt
+│   └── requirements-dev.txt
+└── frontend/
+    ├── .env.example
+    ├── package.json
+    └── src/
+```
+
+## Run locally on Windows
+
+Open a terminal in the repository folder.
+
+### 1. Start the backend
+
+```powershell
 cd backend
 python -m venv .venv
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-# macOS/Linux: source .venv/bin/activate
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
-API: http://127.0.0.1:8000  
-API docs: http://127.0.0.1:8000/docs
 
-Frontend (second terminal):
-```bash
+The backend runs at `http://127.0.0.1:8000`.  
+Interactive API documentation: `http://127.0.0.1:8000/docs`.
+
+If PowerShell blocks virtual-environment activation, use Command Prompt and run:
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+### 2. Start the frontend
+
+Open a **second terminal** at the repository root:
+
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-## Current milestone
-QR decoding + local, transparent baseline URL analysis. No trained ML model, live reputation check, DNS lookup, redirect inspection, or webpage fetching is implemented yet.
+Open the local address printed by Vite (normally `http://localhost:5173`).
+
+The frontend uses `http://127.0.0.1:8000` by default. To change it, copy `.env.example` to `.env` and edit `VITE_API_BASE_URL`.
+
+## Run backend tests
+
+From the `backend` folder, install the development dependencies:
+
+```powershell
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+The tests cover payload classification, common URL indicators, malformed input, the health endpoint, and API validation.
+
+## API endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/health` | Check that the API is running |
+| POST | `/api/scan` | Upload and analyse a QR-code image |
+| POST | `/api/analyze-url` | Analyse a URL supplied as JSON |
+
+Example request for `/api/analyze-url`:
+
+```json
+{
+  "url": "https://example.com/login"
+}
+```
+
+## How to interpret the score
+
+The score is produced by a small, transparent set of rules. It is **not** a trained machine-learning prediction and is not a verified probability of fraud. A low score means only that this limited rule set did not find many indicators. A malicious page can still use a normal-looking HTTPS URL, and a warning indicator can sometimes appear on a legitimate site.
 
 ## Security principles
-- Never automatically navigate to scanned URLs.
+
+- Treat QR payloads as untrusted input.
+- Never automatically navigate to scanned destinations.
 - Do not fetch user-provided URLs from the API in this milestone.
-- Treat QR payloads and any future OCR text as untrusted.
-- Future redirect inspection must use strict egress controls, block private/loopback/link-local/reserved IPs, limit protocols, ports, redirects, timeouts and response sizes, and defend against SSRF and DNS rebinding.
-- HTTPS alone does not establish legitimacy.
+- Do not treat HTTPS or the absence of a warning as proof of trust.
+- Keep uploaded images and decoded personal data out of persistent storage by default.
+- Any future redirect inspection must be isolated and must block loopback, private, link-local and reserved IP ranges; restrict protocols and ports; limit redirects, response sizes and timeouts; and defend against SSRF and DNS rebinding.
 
-## Evaluation plan
-For a future classifier, report precision, recall, F1, false-positive rate, confusion matrix and inference time. Prevent data leakage by separating duplicate and near-duplicate URLs across train/test sets. Record each dataset's source, date, license and label provenance.
+## Roadmap
 
-**Status:** Milestone 1 scaffold and baseline implementation.
+1. **Milestone 1 — QR decode + baseline rules:** implemented in this repository.
+2. **Milestone 2 — dataset preparation + ML model:** select a documented, legally usable dataset; establish a leakage-resistant train/test split; train and compare baseline classifiers; evaluate precision, recall, F1, false-positive rate and confusion matrix.
+3. **Milestone 3 — contextual enrichment:** consider carefully isolated redirect/reputation checks and OCR-based comparison between surrounding poster text and the decoded destination.
+
+Future features will be labelled clearly and will not be presented as implemented until they are working and evaluated.
