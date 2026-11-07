@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -11,6 +12,7 @@ export default function App() {
   async function handleScan(event) {
     event.preventDefault();
     if (!file) return setError("Choose a QR image first.");
+    if (file.size > MAX_UPLOAD_BYTES) return setError("Image exceeds the 5 MB upload limit.");
     setLoading(true);
     setError("");
     setResults([]);
@@ -45,7 +47,7 @@ export default function App() {
           </label>
           <button disabled={!file || loading}>{loading ? "Analysing…" : "Analyse QR code"} <span>↗</span></button>
           {error && <p className="error" role="alert">{error}</p>}
-          <small>▣ &nbsp;Image is processed for this request only.</small>
+          <small>▣ &nbsp;Maximum image size: 5 MB. The destination is never opened automatically.</small>
         </form>
       </section>
 
@@ -58,10 +60,19 @@ export default function App() {
           </div>
           <p className="payload">{item.payload}</p>
           {item.risk_assessment ? <>
-            <h3>What we noticed</h3>
+            <h3>Rule-based analysis</h3>
             <ul>{item.risk_assessment.findings.map(f => <li key={f.code}><b>{f.severity}:</b> {f.message}</li>)}</ul>
             <p className="disclaimer">{item.risk_assessment.disclaimer}</p>
           </> : <p className="disclaimer">Displayed as decoded content only. QRShield has not opened or executed it.</p>}
+
+          {item.ml_assessment && <div className="ml-panel">
+            <h3>Machine-learning assessment</h3>
+            {item.ml_assessment.available ? <>
+              <p><strong>{item.ml_assessment.prediction === "potential_phishing" ? "Potential phishing signal" : "No phishing signal detected by the model"}</strong></p>
+              <p className="ml-score">Phishing-pattern score: {item.ml_assessment.phishing_score}%</p>
+              <p className="disclaimer">{item.ml_assessment.disclaimer}</p>
+            </> : <p className="disclaimer">{item.ml_assessment.message}</p>}
+          </div>}
         </article>)}
       </section>}
 
